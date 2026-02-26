@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  name      String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  newsletters Newsletter[]
+}
+
+model Newsletter {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  content     String
+  excerpt     String?
+  coverImage  String?
+  category    String    @default("update") // bulletin, promotion, update, announcement
+  tags        String?   // JSON array
+  published   Boolean   @default(false)
+  featured    Boolean   @default(false)
+  pinned      Boolean   @default(false)
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  authorId String?
+  author   Admin?  @relation(fields: [authorId], references: [id])
+
+  emailLogs EmailLog[]
+}
+
+model Subscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  active         Boolean   @default(true)
+  confirmed      Boolean   @default(false)
+  confirmToken   String?   @unique
+  unsubToken     String?   @unique
+  confirmedAt    DateTime?
+  unsubscribedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model EmailLog {
+  id             String     @id @default(cuid())
+  newsletterId   String
+  newsletter     Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+  recipientEmail String
+  status         String     @default("pending") // pending, sent, failed, bounced
+  sentAt         DateTime?
+  openedAt       DateTime?
+  clickedAt      DateTime?
+  createdAt      DateTime   @default(now())
+}
+
+model SiteSettings {
+  id          String   @id @default("singleton")
+  siteName    String   @default("HomelessGuyNABOX")
+  tagline     String   @default("24/7 Music Streaming")
+  aboutText   String   @default("")
+  streamUrl   String   @default("https://homelessguynabox.org")
+  socialLinks String?  // JSON
+  updatedAt   DateTime @updatedAt
+}
