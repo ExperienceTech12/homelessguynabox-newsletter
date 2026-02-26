@@ -1,5 +1,8 @@
 FROM node:20-alpine AS base
 
+# Install build tools for better-sqlite3 native compilation
+RUN apk add --no-cache python3 make g++
+
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
@@ -28,24 +31,23 @@ ENV PORT=3000
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy standalone output
+# Copy standalone output (includes node_modules it needs)
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Copy Prisma files for SQLite
+# Copy Prisma schema and migrations for SQLite
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+# Copy the generated Prisma client
 COPY --from=builder /app/src/generated ./src/generated
 
-# Copy seed script deps
-COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
+# Copy native modules needed at runtime
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 COPY --from=builder /app/node_modules/@prisma/adapter-better-sqlite3 ./node_modules/@prisma/adapter-better-sqlite3
-COPY --from=builder /app/node_modules/dotenv ./node_modules/dotenv
 
-# Ensure data directory exists and is writable
+# Ensure prisma directory is writable for SQLite database
 RUN mkdir -p /app/prisma && chown -R nextjs:nodejs /app/prisma
 
 USER nextjs
