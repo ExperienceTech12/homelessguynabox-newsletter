@@ -45,8 +45,9 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 COPY --from=builder /app/node_modules/@prisma/adapter-better-sqlite3 ./node_modules/@prisma/adapter-better-sqlite3
 
-# Copy entrypoint script
+# Copy entrypoint and seed scripts
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+COPY seed-db.js /app/seed-db.js
 
 # Ensure prisma directory is writable for SQLite database
 RUN mkdir -p /app/prisma && chown -R nextjs:nodejs /app/prisma && chmod +x /app/docker-entrypoint.sh
