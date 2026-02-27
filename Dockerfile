@@ -36,10 +36,8 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Copy Prisma schema and migrations for SQLite
+# Copy Prisma schema, migrations, and generated client
 COPY --from=builder /app/prisma ./prisma
-
-# Copy the generated Prisma client
 COPY --from=builder /app/src/generated ./src/generated
 
 # Copy native modules needed at runtime
@@ -47,11 +45,14 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 COPY --from=builder /app/node_modules/@prisma/adapter-better-sqlite3 ./node_modules/@prisma/adapter-better-sqlite3
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+
 # Ensure prisma directory is writable for SQLite database
-RUN mkdir -p /app/prisma && chown -R nextjs:nodejs /app/prisma
+RUN mkdir -p /app/prisma && chown -R nextjs:nodejs /app/prisma && chmod +x /app/docker-entrypoint.sh
 
 USER nextjs
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["/app/docker-entrypoint.sh"]
